@@ -61,10 +61,10 @@ server-config/
 ## 🌐 网络访问方式
 
 ### 部署后访问地址
-- **HTTP API**: `http://你的域名或IP/api`
-- **WebSocket**: `ws://你的域名或IP/ws/chat`
-- **临时文件**: `http://你的域名或IP/temp/`
-- **健康检查**: `http://你的域名或IP/health`
+- **HTTP API**: `http://129.204.241.238/api`
+- **WebSocket**: `ws://129.204.241.238/ws/chat`
+- **临时文件**: `http://129.204.241.238/temp/`
+- **健康检查**: `http://129.204.241.238/health`
 
 ### 不再使用localhost:8083
 - ✅ 所有硬编码的`localhost:8083`地址已替换为动态配置

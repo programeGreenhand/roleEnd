@@ -38,21 +38,35 @@ cp -r ./* $PROJECT_DIR/
 chown -R www-data:www-data $PROJECT_DIR
 chmod -R 755 $PROJECT_DIR
 
-# 复制Nginx配置
+# 配置Nginx
 echo "🌐 配置Nginx..."
-cp server-config/nginx.conf /etc/nginx/sites-available/$PROJECT_NAME
 
-# 启用站点
-if [ ! -f "/etc/nginx/sites-enabled/$PROJECT_NAME" ]; then
-    ln -s /etc/nginx/sites-available/$PROJECT_NAME /etc/nginx/sites-enabled/
+# 检查Nginx配置目录结构
+if [ -d "/etc/nginx/sites-available" ]; then
+    # 传统目录结构
+    cp server-config/nginx.conf /etc/nginx/sites-available/$PROJECT_NAME
+    if [ ! -f "/etc/nginx/sites-enabled/$PROJECT_NAME" ]; then
+        ln -s /etc/nginx/sites-available/$PROJECT_NAME /etc/nginx/sites-enabled/
+    fi
+else
+    # 现代目录结构 - 直接复制到conf.d目录
+    cp server-config/nginx.conf /etc/nginx/conf.d/$PROJECT_NAME.conf
 fi
 
 # 测试Nginx配置
 nginx -t
 if [ $? -eq 0 ]; then
     echo "✅ Nginx配置测试通过"
-    systemctl restart nginx
-    systemctl enable nginx
+    # 检查Nginx服务名称
+    if systemctl list-unit-files | grep -q "nginx.service"; then
+        systemctl restart nginx
+        systemctl enable nginx
+    elif systemctl list-unit-files | grep -q "nginx"; then
+        systemctl restart nginx
+        systemctl enable nginx
+    else
+        echo "⚠️  未找到nginx服务，请手动启动Nginx"
+    fi
 else
     echo "❌ Nginx配置测试失败，请检查配置"
     exit 1
