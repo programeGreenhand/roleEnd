@@ -49,6 +49,10 @@ const DEEPSEEK_BASE_URL = get('DEEPSEEK_BASE_URL', 'DEEPSEEK_BASE_URL', 'https:/
 const JWT_SECRET = get('JWT_SECRET', 'JWT_SECRET', '', true);
 const JWT_EXPIRES_IN = get('JWT_EXPIRES_IN', 'JWT_EXPIRES_IN', '7d');
 
+// 服务器网络配置（新增）
+const SERVER_PUBLIC_URL = get('SERVER_PUBLIC_URL', 'SERVER_PUBLIC_URL', `http://localhost:${PORT}`);
+const ALLOWED_ORIGINS = get('ALLOWED_ORIGINS', 'ALLOWED_ORIGINS', '*').split(',').map(origin => origin.trim());
+
 // MySQL 配置
 const dbConfig = {
   host: get('DB_HOST', 'DB_HOST', 'localhost'),
@@ -86,7 +90,24 @@ if (!fs.existsSync(TEMP_DIR)) {
 
 // 创建Express应用
 const app = express();
-app.use(cors());
+
+// 动态CORS配置
+app.use(cors({
+  origin: function (origin, callback) {
+    // 允许所有来源（开发环境）或指定来源（生产环境）
+    if (ALLOWED_ORIGINS.includes('*') || !origin) {
+      callback(null, true);
+    } else if (ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
 app.use(express.json({ limit: '50mb' }));
 
 // 静态文件服务，用于提供音频文件访问（备用）
@@ -1275,7 +1296,7 @@ async function uploadToAliOSS(buffer, filename, retries = 3) {
         const localFilename = `${Date.now()}_${uuidv4().substring(0, 8)}${path.extname(filename) || '.wav'}`
         const localPath = path.join(TEMP_DIR, localFilename)
         fs.writeFileSync(localPath, buffer)
-        const localUrl = `http://localhost:${PORT}/temp/${localFilename}`
+        const localUrl = `${SERVER_PUBLIC_URL}/temp/${localFilename}`
         console.log(`✓ 本地保存成功: ${localUrl}`)
         return localUrl
       }
@@ -1313,7 +1334,7 @@ app.post('/api/debug/audio-test', upload.none(), async (req, res) => {
       message: '文件已保存',
       filepath: filepath,
       fileSize: buffer.length,
-      downloadUrl: `http://localhost:${PORT}/temp/${path.basename(filepath)}`
+      downloadUrl: `${SERVER_PUBLIC_URL}/temp/${path.basename(filepath)}`
     });
     
   } catch (error) {
@@ -2979,11 +3000,12 @@ const startServer = async () => {
     server.listen(PORT, () => {
       console.log(`\n🚀 智能体对话系统启动成功!`);
       console.log(`📍 端口: ${PORT}`);
-      console.log(`🌐 HTTP API: http://localhost:${PORT}/api`);
-      console.log(`🔌 WebSocket: ws://localhost:${PORT}/ws/chat`);
+      console.log(`🌐 HTTP API: ${SERVER_PUBLIC_URL}/api`);
+      console.log(`🔌 WebSocket: ${SERVER_PUBLIC_URL.replace('http', 'ws')}/ws/chat`);
       console.log(`☁️  阿里云OSS: ${ossConfig.bucket}.${ossConfig.endpoint}`);
       console.log(`🗄️  MySQL数据库: ${dbConfig.host}:3306/${dbConfig.database}`);
       console.log(`📁 临时文件目录: ${TEMP_DIR}`);
+      console.log(`🔒 CORS允许来源: ${ALLOWED_ORIGINS.join(', ')}`);
       console.log(`\n📚 API接口列表:`);
       console.log(`  POST /api/user/register - 用户注册`);
       console.log(`  POST /api/user/login - 用户登录`);
