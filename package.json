@@ -2,8 +2,9 @@
   "name": "javascript",
   "version": "1.0.0",
   "description": "",
-  "main": "backTrack.js",
+  "main": "testjs.js",
   "scripts": {
+    "start": "node testjs.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "commonjs",
