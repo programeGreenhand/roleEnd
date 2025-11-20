@@ -2988,7 +2988,7 @@ const startServer = async () => {
       // 开发环境才执行建表
       if (process.env.NODE_ENV !== 'production') {
         console.log('⚙️ 正在初始化数据库表...');
-        // await createTables(); // 执行建表，添加了用户认证相关的表
+        await createTables(); // 执行建表，添加了用户认证相关的表
         console.log('✅ 数据库表初始化完成');
       }
     } catch (error) {
